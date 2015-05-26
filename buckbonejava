@@ -29,6 +29,8 @@ src_roots = /java/
 default_android_manifest = //res/AndroidManifest.xml
 [android]
 target = Google Inc.:Google APIs:21
+[buildfile]
+includes = //apps/DEFS
 [download]
 maven_repo = http://repo1.maven.org/maven2
 in_build = true
@@ -89,6 +91,50 @@ key.store.password=android
 key.alias.password=android
 EOF
 
+cat > "apps/DEFS" << EOF
+import urllib
+
+#
+# This is a very quick-n-dirty bucklet for maven packages (jar and aar)
+#
+
+def mavensha1(group, name, version, ar):
+	try:
+		link = 'http://repo1.maven.org/maven2/{0}/{1}/{2}/{1}-{2}.{3}.sha1'.format(group.replace('.', '/'), name, version, ar)
+		f = urllib.urlopen(link)
+		cksum = f.read()
+		int(cksum, 16) # will throw an error if cksum is not a hexadecimal string
+		return cksum
+	except ValueError:
+		return None
+
+def maven(pkg):
+	group, name, version = pkg.split(':', 3)
+	for ar in ['aar', 'jar']:
+		cksum = mavensha1(group, name, version, ar)
+		if cksum != None:
+			if ar == 'aar':
+				android_prebuilt_aar(
+					name = name,
+					aar = ':'+name+'-maven',
+				)
+				remote_file(
+					name = name + '-maven',
+					sha1 = cksum,
+					url = 'mvn:' + group + ':' + name + ':' + ar + ':' + version,
+					out = name + '.' + ar,
+				)
+			else:
+				remote_file(
+					name = name,
+					sha1 = cksum,
+					url = 'mvn:' + group + ':' + name + ':' + ar + ':' + version,
+					out = name + '.' + ar,
+				)
+			return
+	print('Not found ' + pkg)
+EOF
+
 cat > "apps/$PKG/BUCK" << EOF
 android_binary(
 	name = 'app',
@@ -132,21 +178,13 @@ android_library(
 	srcs = glob(['*.java']),
 	visibility = [ 'PUBLIC' ],
 	deps = [
-	 ':anvil',
+		# Uncomment this if you want to include otto as a maven dependency
+		# ':otto',
 	],
 )
 
-android_prebuilt_aar(
-  name = 'anvil',
-  aar = ':anvil-aar',
-)
-
-#	sha1 = 'bb3cefeb00269da2146a3df7138f39cc1969a96c',
-remote_file(
-  name = 'anvil-aar',
-  url = 'mvn:co.trikita:anvil:aar:0.0.6',
-  out = 'anvil.aar',
-)
+# Example of maven dependencies
+#maven('com.squareup:otto:1.3.7')
 
 project_config(src_target = ':app')
 EOF
