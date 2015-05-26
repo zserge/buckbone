@@ -1,0 +1,261 @@
+#!/bin/sh
+
+usage() {
+	cat << EOF
+Usage: $0 <package> <dir> <kotlindir>
+EOF
+	exit 0
+}
+
+[ $# -ne 3 ] && usage
+
+PKG="$1"
+DIR="$2"
+KOTLINDIR="$3"
+PKGDIR=$(echo $PKG | sed 's/\./\//g')
+
+mkdir -p "$DIR"
+cd "$DIR"
+
+cat > .buckconfig << EOF
+[alias]
+app = //apps/$PKG:app
+[java]
+src_roots = /kotlin/
+[project]
+# IntelliJ requires that every Android module have an
+# AndroidManifest.xml file associated with it. In practice,
+# most of this is unnecessary boilerplate, so we create one
+# "shared" AndroidManifest.xml file that can be used as a default.
+default_android_manifest = //res/AndroidManifest.xml
+[android]
+target = Google Inc.:Google APIs:21
+[buildfile]
+includes = //apps/DEFS
+[download]
+maven_repo = http://repo1.maven.org/maven2
+in_build = true
+EOF
+
+mkdir -p "kotlin/$PKGDIR"
+mkdir -p "kotlin-lib"
+mkdir -p "res/$PKGDIR"
+mkdir -p "res/$PKGDIR/assets"
+mkdir -p "res/$PKGDIR/res/values"
+mkdir -p "apps/$PKG"
+
+base64 -d > "apps/$PKG/debug.keystore" << EOF
+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
+cnAZofppepsIbk4mwNLDMfoiLHMi
+EOF
+
+cat > "apps/$PKG/debug.keystore.properties" << EOF
+key.alias=my_alias
+key.store.password=android
+key.alias.password=android
+EOF
+
+cat > "apps/DEFS" << EOF
+import urllib
+
+#
+# This is a very quick-n-dirty bucklet for maven packages (jar and aar)
+#
+
+def mavensha1(group, name, version, ar):
+	try:
+		link = 'http://repo1.maven.org/maven2/{0}/{1}/{2}/{1}-{2}.{3}.sha1'.format(group.replace('.', '/'), name, version, ar)
+		f = urllib.urlopen(link)
+		cksum = f.read()
+		int(cksum, 16) # will throw an error if cksum is not a hexadecimal string
+		return cksum
+	except ValueError:
+		return None
+
+def maven(pkg):
+	group, name, version = pkg.split(':', 3)
+	for ar in ['aar', 'jar']:
+		cksum = mavensha1(group, name, version, ar)
+		if cksum != None:
+			if ar == 'aar':
+				android_prebuilt_aar(
+					name = name,
+					aar = ':'+name+'-maven',
+				)
+				remote_file(
+					name = name + '-maven',
+					sha1 = cksum,
+					url = 'mvn:' + group + ':' + name + ':' + ar + ':' + version,
+					out = name + '.' + ar,
+				)
+			else:
+				remote_file(
+					name = name,
+					sha1 = cksum,
+					url = 'mvn:' + group + ':' + name + ':' + ar + ':' + version,
+					out = name + '.' + ar,
+				)
+			return
+	print('Not found ' + pkg)
+EOF
+
+cat > "apps/$PKG/BUCK" << EOF
+android_binary(
+	name = 'app',
+	manifest = 'AndroidManifest.xml',
+	keystore = ':debug_keystore',
+	deps = [
+		'//kotlin/$PKGDIR:app',
+		'//kotlin-lib:runtime',
+		'//res/$PKGDIR:res',
+	],
+)
+
+keystore(
+	name = 'debug_keystore',
+	store = 'debug.keystore',
+	properties = 'debug.keystore.properties',
+)
+
+project_config(src_target = ':app')
+EOF
+
+cat > "apps/$PKG/AndroidManifest.xml" << EOF
+<?xml version='1.0' encoding='utf-8'?>
+<manifest xmlns:android='http://schemas.android.com/apk/res/android'
+	package='$PKG'>
+	<application
+		android:label='@string/app_name'
+		android:hardwareAccelerated='true'>
+		<activity android:name='.MainActivity'>
+			<intent-filter>
+				<action android:name='android.intent.action.MAIN' />
+				<category android:name='android.intent.category.LAUNCHER' />
+			</intent-filter>
+		</activity>
+	</application>
+</manifest>
+EOF
+
+cat > "kotlin-lib/BUCK" << EOF
+prebuilt_jar(
+	name = 'runtime',
+	binary_jar = ':kotlin-runtime-jar',
+	visibility = ['PUBLIC'],
+)
+
+genrule(
+	name = 'kotlin-runtime-jar',
+	out = 'kotlin-runtime.jar',
+	cmd = 'ln -s $KOTLINDIR/lib/kotlin-runtime.jar \$OUT',
+)
+EOF
+
+cat > "kotlin/$PKGDIR/BUCK" << EOF
+android_library(
+	name = 'app',
+	srcs = glob(['*.java']),
+	visibility = [ 'PUBLIC' ],
+	deps = [
+		':kotlin-app',
+	],
+)
+
+prebuilt_jar(
+  name = 'kotlin-app',
+  binary_jar = ':kotlin-app-jar',
+	deps = [
+	]
+)
+
+genrule(
+	name = 'kotlin-app-jar',
+	visibility = [ 'PUBLIC' ],
+	srcs = glob(['*.kt']),
+	out = 'kotlin-app.jar',
+	cmd = '$KOTLINDIR/bin/kotlinc -cp $ANDROID_HOME/platforms/android-21/android.jar -d \$OUT \$SRCS',
+)
+
+# Example of maven dependencies
+#maven('com.squareup:otto:1.3.7')
+
+project_config(src_target = ':app')
+EOF
+
+cat > "kotlin/$PKGDIR/MainActivity.kt" << EOF
+package $PKG;
+
+import android.app.Activity;
+import android.os.Bundle;
+
+public class MainActivity : Activity() {
+	override public fun onCreate(b: Bundle?) {
+		super.onCreate(b)
+	}
+}
+EOF
+
+cat > "res/AndroidManifest.xml" << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="$PKG" />
+EOF
+
+cat > "res/$PKGDIR/res/values/strings.xml" << EOF
+<?xml version='1.0' encoding='utf-8' ?>
+<resources>
+	<string name='app_name'>$(basename $PKGDIR)</string>
+</resources>
+EOF
+
+cat > "res/$PKGDIR/BUCK" << EOF
+android_resource(
+	name = 'res',
+	res = 'res',
+	assets = 'assets',
+	package = '$PKG',
+	visibility = [
+		'//apps/$PKG:',
+	],
+)
+
+project_config(src_target = ':res', src_roots = None)
+EOF
+
