@@ -205,7 +205,7 @@ EOF
 
 cat > "res/AndroidManifest.xml" << EOF
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="trikita.offbeat"/>
+<manifest package="$PKG"/>
 EOF
 
 cat > "res/$PKGDIR/res/values/strings.xml" << EOF
