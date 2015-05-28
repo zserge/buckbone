@@ -125,6 +125,10 @@ def maven(pkg):
 					out = name + '.' + ar,
 				)
 			else:
+				prebuilt_jar(
+					name = name,
+					binary_jar = ':' + name + '-maven',
+				)
 				remote_file(
 					name = name,
 					sha1 = cksum,
