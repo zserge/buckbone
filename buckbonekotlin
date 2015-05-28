@@ -199,6 +199,16 @@ android_library(
 	],
 )
 
+# This is where you should device java dependencies for your kotlin app
+# to avoid dependency loops
+android_library(
+	name = 'java-deps',
+	visibility = ['PUBLIC'],
+	deps = [
+		#':otto',
+	]
+)
+
 prebuilt_jar(
   name = 'kotlin-app',
   binary_jar = ':kotlin-app-jar',
@@ -211,9 +221,9 @@ genrule(
 	visibility = [ 'PUBLIC' ],
 	srcs = glob(['*.kt']),
 	out = 'kotlin-app.jar',
-	cmd = '$KOTLINDIR/bin/kotlinc -cp $ANDROID_HOME/platforms/android-21/android.jar -d \$OUT \$SRCS',
+	cmd = '$KOTLINDIR/bin/kotlinc -cp \$(classpath :java-deps):/opt/android-sdk-linux/platforms/android-21/android.jar -d \$OUT \$SRCS',
 	# using ng makes it a bit faster
-	#cmd = '/opt/buck/build/ng org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -cp /opt/android-sdk-linux/platforms/android-21/android.jar -d \$OUT \$SRCS',
+	#cmd = '/opt/buck/build/ng org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -cp \$(classpath :java-deps):/opt/android-sdk-linux/platforms/android-21/android.jar -d \$OUT \$SRCS',
 )
 
 # Example of maven dependencies
